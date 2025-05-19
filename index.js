@@ -1,17 +1,48 @@
 const Discord = require("discord.js");
 const keep_alive = require('./keep_alive.js')
 const fs = require("fs");
-const client = new Discord.Client();
+const client = new Discord.Client({ intents: [Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.MessageContent] }); // SLASH COMMAND SUPPORT
 const { Prefix, Token, Color } = require("./config.js");
 client.commands = new Discord.Collection();
 client.aliases = new Discord.Collection();
+client.slashCommands = new Discord.Collection(); // SLASH COMMAND SUPPORT
 client.db = require("quick.db");
+
+// SLASH COMMAND LOADER
+const path = require('path');
+const slashCommandsPath = path.join(__dirname, 'slashCommands');
+if (fs.existsSync(slashCommandsPath)) {
+  const slashFiles = fs.readdirSync(slashCommandsPath).filter(file => file.endsWith('.js'));
+  for (const file of slashFiles) {
+    const command = require(`./slashCommands/${file}`);
+    if ('data' in command && 'execute' in command) {
+      client.slashCommands.set(command.data.name, command);
+    } else {
+      console.warn(`[WARNING] The slash command at ${file} is missing a required "data" or "execute" property.`);
+    }
+  }
+}
 
 client.on("ready", async () => {
   console.log(`Yo boii!! Moderation.V1 has been deployed!! Coded by 365 ɢᴀᴍɪɴɢ ɴ ᴍᴏʀᴇ_2.0#6766`);
   client.user
     .setActivity(`Glenrich Confessions, Satarkul`, { type: "WATCHING" })
     .catch(error => console.log(error));
+});
+
+// SLASH COMMAND EXECUTION HANDLER
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const command = client.slashCommands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction, client);
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({ content: 'There was an error while executing this command.', ephemeral: true });
+  }
 });
 
 client.on("message", async message => {
@@ -72,7 +103,7 @@ client.on("message", async message => {
   if (!command) return;
 
   if (command) {
-    if (!message.guild.me.hasPermission("ADMINISTRATOR"))
+    if (!message.guild.me.permissions.has("Administrator"))
       return message.channel.send(
         "I Don't Have Enough Permission To Use This Or Any Of My Commands | Require : Administrator"
       );
@@ -84,5 +115,3 @@ client.on("message", async message => {
 });
 
 client.login(process.env.Token);
-
-//Bot Coded by 365 ɢᴀᴍɪɴɢ ɴ ᴍᴏʀᴇ_2.0#6766 DONOT share WITHOUT credits!!
