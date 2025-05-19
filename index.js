@@ -1,4 +1,5 @@
 const Discord = require("discord.js");
+const keep_alive = require('./keep_alive.js')
 const fs = require("fs");
 const client = new Discord.Client();
 const { Prefix, Token, Color } = require("./config.js");
