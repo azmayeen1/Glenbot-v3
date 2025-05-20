@@ -7,9 +7,9 @@ client.aliases = new Discord.Collection();
 client.db = require("quick.db");
 
 client.on("ready", async () => {
-  console.log(`Yo boii!! Moderation.V1 has been deployed!! Coded by 365 ɢᴀᴍɪɴɢ ɴ ᴍᴏʀᴇ_2.0#6766`);
+  console.log(`Yo boii!! Moderation.V1 has been deployed!! Coded by unknown`);
   client.user
-    .setActivity(`Discord Tricks`, { type: "LISTENING" })
+    .setActivity(`Glenrich Confessions, Satarkul`, { type: "MODERATING" })
     .catch(error => console.log(error));
 });
 
@@ -82,6 +82,6 @@ client.on("message", async message => {
   );
 });
 
-client.login(Token);
+client.login(process.env.Token);
 
 //Bot Coded by 365 ɢᴀᴍɪɴɢ ɴ ᴍᴏʀᴇ_2.0#6766 DONOT share WITHOUT credits!!
