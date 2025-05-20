@@ -9,7 +9,7 @@ client.db = require("quick.db");
 client.on("ready", async () => {
   console.log(`Yo boii!! Moderation.V1 has been deployed!! Coded by unknown`);
   client.user
-    .setActivity(`Glenrich Confessions, Satarkul`, { type: "MODERATING" })
+    .setActivity(`Glenrich Confessions, Satarkul`, { type: "WATCHING" })
     .catch(error => console.log(error));
 });
 
