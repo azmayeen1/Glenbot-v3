@@ -159,9 +159,11 @@ module.exports = {
         userModerationData.delete(Member.id);
         console.log(`Cleaned up moderation data for ${Member.user.tag} after kick.`);
 
+      } catch (err) { // Re-added the catch block for the kick logic
+        console.error(`Failed to kick member ${Member.user.tag}:`, err);
+        // This message will be sent if the kick fails due to permissions or hierarchy
+        return message.channel.send(`❌ Failed to kick **${Member.user.tag}**. Please ensure the bot's role is above the target member's highest role and it has "Kick Members" permissions.`);
       }
-      // The catch block for kick has been removed as requested.
-      // If an error occurs during kick, it will now propagate up.
     }
   },
 };
