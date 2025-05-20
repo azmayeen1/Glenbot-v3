@@ -48,7 +48,7 @@ module.exports = {
     // --- New: Prevent warning a specific user ID ---
     const OWNER_ID_TO_EXCLUDE = "1374003704700862474"; // The specific user ID you want to exclude from being warned
     if (Member.id === OWNER_ID_TO_EXCLUDE) {
-      return message.channel.send(`❌ You cannot warn the owner.`);
+      return message.channel.send(`❌ I cannot warn that specific user.`);
     }
     // --- End New ---
 
@@ -61,11 +61,9 @@ module.exports = {
     //   return message.channel.send(`You can't warn the server owner!`);
     // }
 
-    // Check if the bot can moderate the target member based on role hierarchy
-    // The bot cannot moderate members whose highest role is equal to or higher than its own.
-    if (!Member.moderatable) {
-      return message.channel.send(`❌ I cannot moderate **${Member.user.tag}** because their highest role is equal to or higher than my highest role.`);
-    }
+    // Removed the !Member.moderatable check here.
+    // Any moderation hierarchy or permission issues will now be caught by the try...catch blocks
+    // during the timeout or kick attempts.
 
     // Get the reason for the warning, default to "No reason provided"
     let Reason = args.slice(1).join(" ") || "No reason provided";
@@ -127,7 +125,8 @@ module.exports = {
 
       } catch (err) {
         console.error(`Failed to timeout member ${Member.user.tag}:`, err);
-        return message.channel.send(`❌ Failed to timeout **${Member.user.tag}**. Please check the bot's role position and "Timeout Members" permissions.`);
+        // Updated error message to be more general
+        return message.channel.send(`❌ Failed to timeout **${Member.user.tag}**. Please ensure the bot's role is above the target member's highest role and it has "Timeout Members" permissions.`);
       }
     }
 
@@ -158,7 +157,8 @@ module.exports = {
 
       } catch (err) {
         console.error(`Failed to kick member ${Member.user.tag}:`, err);
-        return message.channel.send(`❌ Failed to kick **${Member.user.tag}**. Please check the bot's role position and "Kick Members" permissions.`);
+        // Updated error message to be more general
+        return message.channel.send(`❌ Failed to kick **${Member.user.tag}**. Please ensure the bot's role is above the target member's highest role and it has "Kick Members" permissions.`);
       }
     }
   },
