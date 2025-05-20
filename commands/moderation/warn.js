@@ -59,7 +59,6 @@ module.exports = {
         Timeouts = 0;
     }
 
-
     // Create and send the warning embed
     let warnEmbed = new MessageEmbed()
       .setColor(Color)
@@ -71,7 +70,12 @@ module.exports = {
       .setFooter(`Requested by ${message.author.username}`)
       .setTimestamp();
 
-    message.channel.send({ embeds: [warnEmbed] });
+    try {
+      await message.channel.send({ embeds: [warnEmbed] });
+    } catch (sendErr) {
+      console.error(`Failed to send warn embed to channel:`, sendErr);
+      // You can add a fallback message here if needed, but logging is usually sufficient
+    }
 
     // --- Timeout Logic ---
     if (Warnings >= 3) {
@@ -92,7 +96,11 @@ module.exports = {
           .setFooter(`Timeout issued by ${message.author.username}`)
           .setTimestamp();
 
-        message.channel.send({ embeds: [timeoutEmbed] });
+        try {
+          await message.channel.send({ embeds: [timeoutEmbed] });
+        } catch (sendErr) {
+          console.error(`Failed to send timeout embed to channel:`, sendErr);
+        }
 
       } catch (err) {
         console.error(`Failed to timeout member ${Member.user.tag}:`, err);
@@ -114,7 +122,11 @@ module.exports = {
           .setFooter(`Kick issued by ${message.author.username}`)
           .setTimestamp();
 
-        message.channel.send({ embeds: [kickEmbed] });
+        try {
+          await message.channel.send({ embeds: [kickEmbed] });
+        } catch (sendErr) {
+          console.error(`Failed to send kick embed to channel:`, sendErr);
+        }
 
         // Clean up their data from the database after kick
         client.db.delete(`Warnings_${message.guild.id}_${Member.user.id}`);
