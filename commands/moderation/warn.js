@@ -45,9 +45,26 @@ module.exports = {
       return message.channel.send(`You can't warn me!`);
     }
 
-    // Prevent warning the server owner
-    if (Member.id === message.guild.ownerId) {
-      return message.channel.send(`You can't warn the server owner!`);
+    // --- New: Prevent warning a specific user ID ---
+    const OWNER_ID_TO_EXCLUDE = "1374003704700862474"; // The specific user ID you want to exclude from being warned
+    if (Member.id === OWNER_ID_TO_EXCLUDE) {
+      return message.channel.send(`❌ You cannot warn the owner.`);
+    }
+    // --- End New ---
+
+    // Removed the explicit check for server owner.
+    // The bot can now attempt to warn the server owner,
+    // but Discord's hierarchy rules will still apply.
+    // If the bot's highest role is not above the owner's role,
+    // the 'Member.moderatable' check below will catch it.
+    // if (Member.id === message.guild.ownerId) {
+    //   return message.channel.send(`You can't warn the server owner!`);
+    // }
+
+    // Check if the bot can moderate the target member based on role hierarchy
+    // The bot cannot moderate members whose highest role is equal to or higher than its own.
+    if (!Member.moderatable) {
+      return message.channel.send(`❌ I cannot moderate **${Member.user.tag}** because their highest role is equal to or higher than my highest role.`);
     }
 
     // Get the reason for the warning, default to "No reason provided"
