@@ -31,8 +31,10 @@ module.exports = {
     if (Member.id === client.user.id)
       return message.channel.send(`Please don't warn me ;-;`);
 
-    if (!Member.moderatable)
-      return message.channel.send(`I can't moderate that member!`);
+    console.log("Moderatable:", Member.moderatable);
+if (!Member.moderatable)
+  return message.channel.send(`I can't moderate that member!`);
+
 
     let Reason = args.slice(1).join(" ") || "No reason provided!";
 
