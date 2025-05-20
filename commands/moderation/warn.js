@@ -95,11 +95,16 @@ module.exports = {
 
     message.channel.send({ embeds: [warnEmbed] });
 
-    // DM the warned user if they are not a bot
-    if (!Member.user.bot) {
-      Member.send(`You have been warned in **${message.guild.name}**. Reason: ${Reason}. You now have ${userData.warnings} warning(s).`)
-        .catch(err => console.error(`Could not DM warned user ${Member.user.tag}: ${err}`));
-    }
+    // DM the warned user if they are not a bot - REMOVED
+    // if (!Member.user.bot) {
+    //   const dmContent = `You have been warned in **${message.guild.name}**. Reason: ${Reason}. You now have ${userData.warnings} warning(s).`;
+    //   if (dmContent.trim().length > 0) { // Ensure content is not empty or just whitespace
+    //     Member.send(dmContent)
+    //       .catch(err => console.error(`Could not DM warned user ${Member.user.tag}: ${err}`));
+    //   } else {
+    //     console.warn(`Attempted to send empty DM to ${Member.user.tag} after warning.`);
+    //   }
+    // }
 
     // --- Timeout Logic ---
     if (userData.warnings >= 3) {
@@ -121,11 +126,16 @@ module.exports = {
 
         message.channel.send({ embeds: [timeoutEmbed] });
 
-        // DM the timed out user if they are not a bot
-        if (!Member.user.bot) {
-          Member.send(`You have been timed out in **${message.guild.name}** for 1 hour after receiving 3 warnings. You now have ${userData.timeouts} timeout(s).`)
-            .catch(err => console.error(`Could not DM timed out user ${Member.user.tag}: ${err}`));
-        }
+        // DM the timed out user if they are not a bot - REMOVED
+        // if (!Member.user.bot) {
+        //   const dmContent = `You have been timed out in **${message.guild.name}** for 1 hour after receiving 3 warnings. You now have ${userData.timeouts} timeout(s).`;
+        //   if (dmContent.trim().length > 0) { // Ensure content is not empty or just whitespace
+        //     Member.send(dmContent)
+        //       .catch(err => console.error(`Could not DM timed out user ${Member.user.tag}: ${err}`));
+        //   } else {
+        //     console.warn(`Attempted to send empty DM to ${Member.user.tag} after timeout.`);
+        //   }
+        // }
 
       } catch (err) {
         console.error(`Failed to timeout member ${Member.user.tag}:`, err);
@@ -149,11 +159,16 @@ module.exports = {
 
         message.channel.send({ embeds: [kickEmbed] });
 
-        // DM the kicked user if they are not a bot (this might fail if they're already kicked)
-        if (!Member.user.bot) {
-          Member.send(`You have been kicked from **${message.guild.name}** after accumulating 3 timeouts.`)
-            .catch(err => console.error(`Could not DM kicked user ${Member.user.tag}: ${err}`));
-        }
+        // DM the kicked user if they are not a bot (this might fail if they're already kicked) - REMOVED
+        // if (!Member.user.bot) {
+        //   const dmContent = `You have been kicked from **${message.guild.name}** after accumulating 3 timeouts.`;
+        //   if (dmContent.trim().length > 0) { // Ensure content is not empty or just whitespace
+        //     Member.send(dmContent)
+        //       .catch(err => console.error(`Could not DM kicked user ${Member.user.tag}: ${err}`));
+        //   } else {
+        //     console.warn(`Attempted to send empty DM to ${Member.user.tag} after kick.`);
+        //   }
+        // }
 
         // Clean up their data after kick
         userModerationData.delete(Member.id);
