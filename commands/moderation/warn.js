@@ -5,25 +5,24 @@ const { Color } = require("../../config.js");
 module.exports = {
   name: "warn",
   aliases: [],
-  description: "Warn A User! 3 warnings = 1-hour timeout. 3 timeouts = kick.",
+  description: "Warn A User! Resets warnings and times out after 3 warnings.",
   usage: "Warn <Mention User> | <Reason>",
   run: async (client, message, args) => {
-    // Start
-    message.delete(); // Deletes the command message as per your original code
+    //Start
+    message.delete();
 
-    // Check if the message author has the 'BAN_MEMBERS' permission
-    if (!message.member.hasPermission("BAN_MEMBERS")) {
+    // Check if the message author has the 'MODERATE_MEMBERS' permission.
+    // This permission is required for timing out members.
+    if (!message.member.hasPermission("MODERATE_MEMBERS")) {
       return message.channel.send(
-        `You Don't Have Permission To Use This Command!`
+        `You Don't Have Permission To Use This Command! You need "Moderate Members" permission.`
       );
     }
-
-    // Get the member to warn, either by mention or ID
+    
     let Member =
       message.mentions.members.first() ||
       message.guild.members.cache.get(args[0]);
 
-    // Validate if a valid member was found
     if (!Member) return message.channel.send(`Please Mention A User!`);
 
     // Prevent warning self
@@ -37,62 +36,63 @@ module.exports = {
     }
 
     // --- Prevent warning a specific user ID ---
-    const OWNER_ID_TO_EXCLUDE = "1374003704700862474"; // The specific user ID you want to exclude from being warned
-    if (Member.id === OWNER_ID_TO_EXCLUDE) {
+    const USER_ID_TO_EXCLUDE = "1374003704700862474"; // The specific user ID you want to exclude from being warned
+    if (Member.id === USER_ID_TO_EXCLUDE) {
       return message.channel.send(`❌ I cannot warn that specific user.`);
     }
     // --- End ---
 
-    // Get the reason for the warning, default to "No Reason Provided!"
+    // --- Removed: Check if the bot can moderate the target member based on role hierarchy ---
+    // The bot will now attempt moderation actions, and any hierarchy/permission issues
+    // will be caught by the try...catch blocks during timeout/kick.
+    // if (!Member.moderatable) {
+    //   return message.channel.send(`❌ I cannot moderate **${Member.user.tag}** because their highest role is equal to or higher than my highest role.`);
+    // }
+    // --- End Removed ---
+
     let Reason = args.slice(1).join(" ");
-    if (!Reason) Reason = "No Reason Provided!";
+    if (!Reason) Reason = "No Reason Provided!"; // Ensure reason is not empty
 
-    // Initialize warnings and timeouts from the database if they don't exist
-    // client.db.add will automatically set to 0 if not present before adding
     client.db.add(`Warnings_${message.guild.id}_${Member.user.id}`, 1);
-    let Warnings = client.db.get(`Warnings_${message.guild.id}_${Member.user.id}`);
 
-    // Ensure timeouts are initialized, default to 0 if not set
-    let Timeouts = client.db.get(`Timeouts_${message.guild.id}_${Member.user.id}`);
-    if (Timeouts === null) { // Check for null as .get might return null if not set
-        client.db.set(`Timeouts_${message.guild.id}_${Member.user.id}`, 0);
-        Timeouts = 0;
-    }
+    let Warnings = client.db.get(
+      `Warnings_${message.guild.id}_${Member.user.id}`
+    );
 
-    // Create and send the warning embed
-    let warnEmbed = new MessageEmbed()
-      .setColor(Color)
+    // --- Ensure Color is valid, provide a fallback if not ---
+    const embedColor = Color || "#FF0000"; // Default to red if Color is undefined/null
+    // --- End Color fallback ---
+
+    let embed = new MessageEmbed()
+      .setColor(embedColor) // Use the validated color
       .setTitle(`⚠️ Member Warned!`)
-      .addField(`Moderator`, `${message.author.tag} (${message.author.id})`)
+      .addField(`Moderator`, `${message.author.tag} (${message.author.id})`) // Corrected closing parenthesis
       .addField(`Warned Member`, `${Member.user.tag} (${Member.user.id})`)
+      .addField(`Now Member Warnings`, Warnings)
       .addField(`Reason`, `${Reason}`)
-      .addField(`Current Warnings`, `${Warnings}/3`)
       .setFooter(`Requested by ${message.author.username}`)
       .setTimestamp();
 
+    // Send the embed using the embeds array for Discord.js v13+ compatibility
     try {
-      await message.channel.send({ embeds: [warnEmbed] });
+      await message.channel.send({ embeds: [embed] });
     } catch (sendErr) {
       console.error(`Failed to send warn embed to channel:`, sendErr);
-      // You can add a fallback message here if needed, but logging is usually sufficient
     }
 
-    // --- Timeout Logic ---
+    // --- Reset System Logic: Timeout after 3 warnings ---
     if (Warnings >= 3) {
-      client.db.set(`Warnings_${message.guild.id}_${Member.user.id}`, 0); // Reset warnings
-      client.db.add(`Timeouts_${message.guild.id}_${Member.user.id}`, 1); // Increment timeouts
-      Timeouts = client.db.get(`Timeouts_${message.guild.id}_${Member.user.id}`); // Get updated timeout count
+      client.db.set(`Warnings_${message.guild.id}_${Member.user.id}`, 0); // Reset warnings to 0
 
       try {
         // Timeout the member for 1 hour (60 * 60 * 1000 milliseconds)
         // Ensure the bot has 'MODERATE_MEMBERS' permission and its role is higher
-        await Member.timeout(60 * 60 * 1000, `Accumulated 3 warnings. Timeout #${Timeouts}`);
+        await Member.timeout(60 * 60 * 1000, `Accumulated 3 warnings. Warnings reset.`);
 
         const timeoutEmbed = new MessageEmbed()
-          .setColor(Color)
+          .setColor(embedColor)
           .setTitle(`⏱️ Member Timed Out!`)
-          .setDescription(`${Member.user.tag} has been timed out for 1 hour due to receiving 3 warnings.`)
-          .addField(`Total Timeouts`, `${Timeouts}/3`)
+          .setDescription(`${Member.user.tag} has reached 3 warnings and has been timed out for 1 hour. Warnings have been reset.`)
           .setFooter(`Timeout issued by ${message.author.username}`)
           .setTimestamp();
 
@@ -107,37 +107,6 @@ module.exports = {
         return message.channel.send(`❌ Failed to timeout **${Member.user.tag}**. Please ensure the bot's role is above the target member's highest role and it has "Timeout Members" permissions.`);
       }
     }
-
-    // --- Kick Logic (after timeout logic) ---
-    if (Timeouts >= 3) {
-      try {
-        // Kick the member
-        // Ensure the bot has 'KICK_MEMBERS' permission and its role is higher
-        await Member.kick(`Accumulated 3 timeouts.`);
-
-        const kickEmbed = new MessageEmbed()
-          .setColor(Color)
-          .setTitle(`👢 Member Kicked!`)
-          .setDescription(`${Member.user.tag} has been kicked from the server due to accumulating 3 timeouts.`)
-          .setFooter(`Kick issued by ${message.author.username}`)
-          .setTimestamp();
-
-        try {
-          await message.channel.send({ embeds: [kickEmbed] });
-        } catch (sendErr) {
-          console.error(`Failed to send kick embed to channel:`, sendErr);
-        }
-
-        // Clean up their data from the database after kick
-        client.db.delete(`Warnings_${message.guild.id}_${Member.user.id}`);
-        client.db.delete(`Timeouts_${message.guild.id}_${Member.user.id}`);
-        console.log(`Cleaned up moderation data for ${Member.user.tag} after kick.`);
-
-      } catch (err) {
-        console.error(`Failed to kick member ${Member.user.tag}:`, err);
-        return message.channel.send(`❌ Failed to kick **${Member.user.tag}**. Please ensure the bot's role is above the target member's highest role and it has "Kick Members" permissions.`);
-      }
-    }
-    // End
-  },
+    //End
+  }
 };
