@@ -33,7 +33,7 @@ module.exports = {
     let embed = new MessageEmbed()
       .setColor(Color)
       .setTitle(`Member Warned!`)
-      .addField(`Moderator`, `${message.author.tag} (${message.author.id}`)
+      .addField(`Moderator`, `${message.author.tag} (${message.author.id})`) // Added closing parenthesis here
       .addField(`Warned Member`, `${Member.user.tag} (${Member.user.id})`)
       .addField(`Now Member Warnings`, Warnings)
       .addField(`Reason`, `${Reason || "No Reason Provided!"}`)
@@ -43,7 +43,7 @@ module.exports = {
     message.channel.send(embed);
     if (Warnings >= 3) {
       client.db.set(`Warnings_${message.guild.id}_${Member.user.id}`, 0);
-
+    } // <--- ADD THIS CLOSING BRACE HERE
     //End
-  }
-};
+  } // <--- This closes the 'run' async function
+}; // <--- This closes the 'module.exports' object
