@@ -1,12 +1,12 @@
 const Discord = require("discord.js");
 const { Color } = require("../../config.js");
 
-const warnings = new Map();
+let warnings = new Map();
 
 module.exports = {
   name: "warn",
   aliases: [],
-  description: "Warn a member. 3 warnings = 1 hour timeout.",
+  description: "Warn a member. 3 warnings = 1-hour timeout.",
   usage: "warn <@member> [reason]",
   run: async (client, message, args) => {
     message.delete();
@@ -23,52 +23,52 @@ module.exports = {
       return message.channel.send(`You can't warn yourself!`);
 
     if (Member.id === client.user.id)
-      return message.channel.send(`Please don't try to warn me, sir...`);
+      return message.channel.send(`You can't warn me!`);
 
     if (Member.id === message.guild.ownerId)
       return message.channel.send(`You can't warn the server owner!`);
 
-    if (!Member.moderatable)
-      return message.channel.send(`I can't moderate that member! Please check my role position.`);
+    let Reason = args.slice(1).join(" ") || "No reason provided";
+    let userWarnings = warnings.get(Member.id) || 0;
+    userWarnings++;
+    warnings.set(Member.id, userWarnings);
 
-    const Reason = args.slice(1).join(" ") || "No reason provided";
-
-    // Store and increment warnings
-    const key = `${message.guild.id}-${Member.id}`;
-    let count = warnings.get(key) || 0;
-    count++;
-    warnings.set(key, count);
-
-    const embed = new Discord.MessageEmbed()
+    const warnEmbed = new Discord.MessageEmbed()
       .setColor(Color)
-      .setTitle(`Member Warned`)
+      .setTitle(`⚠️ Member Warned`)
       .addField(`Moderator`, `${message.author.tag} (${message.author.id})`)
       .addField(`Warned Member`, `${Member.user.tag} (${Member.id})`)
       .addField(`Reason`, Reason)
-      .addField(`Total Warnings`, `${count}/3`)
+      .addField(`Total Warnings`, `${userWarnings}/3`)
       .setFooter(`Requested by ${message.author.username}`)
       .setTimestamp();
 
-    await message.channel.send({ embeds: [embed] });
+    message.channel.send({ embeds: [warnEmbed] });
 
-    try {
-      await Member.send(`You have been warned in **${message.guild.name}** for: ${Reason}`);
-    } catch (err) {
-      console.log("Couldn't DM the user.");
+    // DM the warned user if not a bot
+    if (!Member.user.bot) {
+      Member.send(`You have been warned in **${message.guild.name}**. Reason: ${Reason}`);
     }
 
-    // Timeout on 3 warnings
-    if (count >= 3) {
+    if (userWarnings >= 3) {
+      warnings.set(Member.id, 0); // Reset warnings after timeout
+
       try {
         await Member.timeout(60 * 60 * 1000, "Reached 3 warnings");
-        warnings.set(key, 0); // Reset warning count
+        const timeoutEmbed = new Discord.MessageEmbed()
+          .setColor(Color)
+          .setTitle(`⏱️ Member Timed Out`)
+          .setDescription(`${Member.user.tag} has been timed out for 1 hour due to receiving 3 warnings.`)
+          .setFooter(`Timeout issued by ${message.author.username}`)
+          .setTimestamp();
 
-        await message.channel.send(
-          `${Member.user.tag} has been timed out for 1 hour due to accumulating 3 warnings.`
-        );
-      } catch (error) {
-        console.error(error);
-        return message.channel.send(`Failed to timeout the member. Please check permissions.`);
+        message.channel.send({ embeds: [timeoutEmbed] });
+
+        if (!Member.user.bot) {
+          Member.send(`You have been timed out in **${message.guild.name}** for 1 hour after receiving 3 warnings.`);
+        }
+      } catch (err) {
+        return message.channel.send(`❌ Failed to timeout the member. Check role position or permissions.`);
       }
     }
   },
