@@ -45,12 +45,12 @@ module.exports = {
       return message.channel.send(`You can't warn me!`);
     }
 
-    // --- New: Prevent warning a specific user ID ---
+    // --- Prevent warning a specific user ID ---
     const OWNER_ID_TO_EXCLUDE = "1374003704700862474"; // The specific user ID you want to exclude from being warned
     if (Member.id === OWNER_ID_TO_EXCLUDE) {
       return message.channel.send(`❌ I cannot warn that specific user.`);
     }
-    // --- End New ---
+    // --- End ---
 
     // Removed the explicit check for server owner.
     // The bot can now attempt to warn the server owner,
@@ -61,9 +61,13 @@ module.exports = {
     //   return message.channel.send(`You can't warn the server owner!`);
     // }
 
-    // Removed the !Member.moderatable check here.
-    // Any moderation hierarchy or permission issues will now be caught by the try...catch blocks
-    // during the timeout or kick attempts.
+    // --- Removed: Check if the bot can moderate the target member based on role hierarchy ---
+    // The bot will now attempt moderation actions, and any hierarchy/permission issues
+    // will be caught by the try...catch blocks during timeout/kick.
+    // if (!Member.moderatable) {
+    //   return message.channel.send(`❌ I cannot moderate **${Member.user.tag}** because their highest role is equal to or higher than my highest role.`);
+    // }
+    // --- End Removed ---
 
     // Get the reason for the warning, default to "No reason provided"
     let Reason = args.slice(1).join(" ") || "No reason provided";
@@ -155,11 +159,9 @@ module.exports = {
         userModerationData.delete(Member.id);
         console.log(`Cleaned up moderation data for ${Member.user.tag} after kick.`);
 
-      } catch (err) {
-        console.error(`Failed to kick member ${Member.user.tag}:`, err);
-        // Updated error message to be more general
-        return message.channel.send(`❌ Failed to kick **${Member.user.tag}**. Please ensure the bot's role is above the target member's highest role and it has "Kick Members" permissions.`);
       }
+      // The catch block for kick has been removed as requested.
+      // If an error occurs during kick, it will now propagate up.
     }
   },
 };
